@@ -158,18 +158,59 @@
   background-position: 0 0, 16px 16px;
 }
 
-/* Leaflet Map overrides for Deep Dark Mode */
+/* Leaflet Map overrides for High-Detail & Multi-Layer Mode */
 .leaflet-container {
   width: 100%;
   height: 100%;
   border-radius: 1.25rem;
-  background: #081226 !important;
+  background: #060b18 !important;
   z-index: 1;
+  font-family: var(--font-primary) !important;
 }
 
-/* Invert standard osm tiles to sleek dark mode */
-.leaflet-tile-pane {
-  filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.35);
+/* Optional tactical dark filter only when explicitly enabled on standard OSM tiles */
+.map-theme-tactical .leaflet-tile-pane {
+  filter: brightness(0.88) contrast(1.12) saturate(0.85);
+}
+
+/* Custom Dark Glassmorphic Popups for Leaflet */
+.leaflet-popup-content-wrapper {
+  background: rgba(10, 21, 46, 0.96) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(0, 240, 255, 0.45) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.85), 0 0 25px 0 rgba(0, 240, 255, 0.2) !important;
+  backdrop-filter: blur(12px);
+  padding: 2px !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(10, 21, 46, 0.96) !important;
+  border: 1px solid rgba(0, 240, 255, 0.45) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+  font-size: 18px !important;
+  padding: 6px 8px 0 0 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #00f0ff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(6, 11, 24, 0.85) !important;
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+  border-top-left-radius: 0.5rem !important;
+  padding: 2px 8px !important;
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  border-left: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
 }
 
 /* Tech Marker custom styling for dark mode */
@@ -254,4 +295,3 @@
     display: block !important;
   }
 }
-

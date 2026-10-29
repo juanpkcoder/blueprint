@@ -1,41 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Bot, Send, Sparkles, Sliders, DollarSign, Smartphone, 
-  Building2, Plus, Check, Zap, X, ChevronRight, RefreshCw, 
-  CheckCircle2, AlertCircle, HelpCircle, Layers, ArrowRight,
-  Settings, Key, Cpu, Eye, EyeOff, ShieldCheck, Laptop, PhoneCall
+  Bot, Send, Sparkles, Smartphone, Building2, 
+  X, RefreshCw, ArrowRight
 } from 'lucide-react';
-import { SUBSCRIPTION_TIERS, SERVICE_CATEGORIES, MOBILE_DEVICES_LIST } from '../data/mockData';
-import { loadAiConfig, saveAiConfig, sendQueryToAI } from '../services/aiProviderService';
+import { SUBSCRIPTION_TIERS, MOBILE_DEVICES_LIST } from '../data/mockData';
+import { loadAiConfig, sendQueryToAI } from '../services/aiProviderService';
+import { formatCOP, convertUSDToCOP } from '../utils/currencyUtils';
+import { sanitizeText } from '../utils/securityUtils';
 import { playSoundEffect } from '../utils/soundEffects';
 
 export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onCloseModal }) => {
-  const [aiConfig, setAiConfig] = useState(loadAiConfig);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [testConnectionStatus, setTestConnectionStatus] = useState(null); // null | 'testing' | 'success' | 'error'
-  const [testErrorMessage, setTestErrorMessage] = useState('');
+  const [aiConfig] = useState(loadAiConfig);
 
-  // Mode for the Quick Quote Wizard inside AI: 'chat' | 'b2b_quote' | 'b2c_quote'
+  // Modo activo del asistente: 'chat' | 'b2b_quote' | 'b2c_quote'
   const [activeMode, setActiveMode] = useState('chat');
 
-  // B2B Quote State
+  // Estado del cotizador B2B
   const [b2bWorkstations, setB2bWorkstations] = useState(15);
   const [b2bHasServers, setB2bHasServers] = useState(true);
   const [b2bNeedLicenses, setB2bNeedLicenses] = useState(true);
-  const [b2bUrgency, setB2bUrgency] = useState('standard');
 
-  // B2C Quote State
-  const [b2cDeviceType, setB2cDeviceType] = useState('smartphone'); // 'smartphone' | 'laptop'
+  // Estado del cotizador B2C
   const [b2cBrand, setB2cBrand] = useState('Apple');
   const [b2cModel, setB2cModel] = useState('iPhone 15 / 15 Pro');
-  const [b2cIssue, setB2cIssue] = useState('Pantalla OLED Rota / Sin Imagen');
+  const [b2cIssue, setB2cIssue] = useState('Pantalla OLED rota o sin imagen');
 
   const [messages, setMessages] = useState([
     {
       id: 'msg-1',
       sender: 'bot',
-      text: '¡Hola! Soy **Blueprint IA Assistant**, tu asesor técnico y cotizador automatizado de **Blueprint by QuintoNodo Tech**. 🤖⚡\n\n¿Qué deseas cotizar hoy?\n• **🏢 Empresas (B2B)**: Contratos de soporte continuo por rangos, mantenimiento de flotas de cómputo y licenciamiento por volumen.\n• **📱 Personas (B2C)**: Reparación express de celulares (pantallas OLED, baterías, puertos de carga) y mantenimiento de laptops/PCs.\n• **🛡️ Licencias Oficiales**: Kaspersky Total Security, Bitdefender, Microsoft 365 y Windows 11 Pro.',
+      text: '¡Hola! Soy **Blueprint IA Assistant**, tu consultor técnico y cotizador inteligente de **Blueprint by QuintoNodo Tech**. 🤖⚡\n\n¿En qué requerimiento tecnológico puedo asesorarte hoy?\n• **🏢 Empresas (B2B)**: Contratos de soporte continuo con SLA garantizado, mantenimiento preventivo de flotas de cómputo y servidores.\n• **📱 Personas (B2C)**: Reparación exprés de celulares (pantallas OLED originales, baterías certificadas, puertos de carga) y optimización de portátiles.\n• **🛡️ Licenciamiento Oficial**: Kaspersky Endpoint Cloud, Bitdefender, Microsoft 365 y Windows 11 Pro con facturación electrónica DIAN.',
       time: 'Ahora',
       recommendationData: null
     }
@@ -49,14 +43,13 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isThinking, activeMode]);
 
-  // Recommendation engine: Live AI API (Gemini / Ollama) or Smart Simulation Fallback
   const generateAIResponse = async (userText) => {
     setIsThinking(true);
     playSoundEffect('notification');
 
     const textLower = userText.toLowerCase();
 
-    // 1. Attempt live API call if configured
+    // 1. Intentar consulta con proveedor IA si está activo
     try {
       const liveReply = await sendQueryToAI(userText, messages, aiConfig);
       if (liveReply) {
@@ -73,19 +66,18 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         return;
       }
     } catch (err) {
-      console.warn('API Call Error, falling back to smart simulation:', err);
+      console.warn('Proveedor IA no disponible, ejecutando motor de cotización local:', err);
     }
 
-    // 2. Local Simulation Quoting Logic
+    // 2. Motor de cotización local de alta precisión
     setTimeout(() => {
       setIsThinking(false);
 
-      // A. Cellphone / Mobile repair query
       if (textLower.includes('celular') || textLower.includes('pantalla') || textLower.includes('iphone') || textLower.includes('samsung') || textLower.includes('xiaomi') || textLower.includes('bateria') || textLower.includes('batería')) {
         const reply = {
           id: `msg-${Date.now()}`,
           sender: 'bot',
-          text: `📱 **Cotización Estimada de Reparación Móvil Express (B2C):**\n\n• **Pantalla OLED Grado Original:** $65 - $125 USD (incluye programación TrueTone y sellado contra polvo).\n• **Batería Certificada (Salud 100%):** $35 - $50 USD (reemplazo en 30 minutos).\n• **Puerto de Carga Type-C / Lightning:** $28 - $38 USD.\n• **Garantía Escrita:** 6 Meses en todas las refacciones.\n\n🚀 *¿Deseas que un técnico de nuestro móvil acuda a tu ubicación o prefieres traerlo al laboratorio central?*`,
+          text: `📱 **Cotización de Referencia para Reparación Móvil Exprés (B2C):**\n\n• **Pantalla OLED de Grado Original:** $65 - $125 USD (~${formatCOP(convertUSDToCOP(65))} a ${formatCOP(convertUSDToCOP(125))} COP). Incluye transferencia de calibración True Tone y sellado contra polvo.\n• **Batería Certificada (Capacidad al 100 %):** $35 - $50 USD (instalación en 30 minutos).\n• **Puerto de Carga USB-C / Lightning:** $28 - $38 USD.\n• **Garantía Escrita:** 6 meses sobre todos los repuestos instalados.\n\n🚀 *¿Deseas que un especialista de nuestro laboratorio móvil acuda a tu dirección en Bogotá o prefieres visitarnos en nuestra sede de Chapinero?*`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           recommendationData: {
             type: 'mobile_quote',
@@ -98,16 +90,15 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         return;
       }
 
-      // B. B2B / Empresa / Contrato query
-      if (textLower.includes('empresa') || textLower.includes('contrato') || textLower.includes('suscripcion') || textLower.includes('suscripción') || textLower.includes('pyme') || textLower.includes('equipos') || textLower.includes('b2b') || textLower.includes('servidor')) {
+      if (textLower.includes('empresa') || textLower.includes('contrato') || textLower.includes('suscripcion') || textLower.includes('suscripción') || textLower.includes('pyme') || textLower.includes('equipos') || textLower.includes('computador') || textLower.includes('b2b') || textLower.includes('servidor')) {
         const reply = {
           id: `msg-${Date.now()}`,
           sender: 'bot',
-          text: `🏢 **Planes y Contratos IT por Rangos para Empresas (B2B):**\n\n1. **Starter Pyme (1 a 10 equipos)**: **$99 USD/mes** ($84/mes anual). Soporte remoto 8x5 + 1 preventivo trimestral + Antivirus gestionado (SLA < 2h).\n2. **Business Pro (11 a 35 equipos + servidores)**: **$249 USD/mes** ($210/mes anual). Soporte 12x6 + 4 visitas en sitio/mes + mantenimiento de servidores + 20% dto. en Office 365 (SLA < 45m).\n3. **Enterprise Titan (36 a 80+ equipos)**: **$590 USD/mes** ($499/mes anual). Soporte 24/7/365 dedicado + Visitas ilimitadas + Ciberseguridad EDR (SLA < 20m).\n\n💡 *Puedes usar el botón rápido abajo para calcular la tarifa exacta según tus puestos de trabajo.*`,
+          text: `🏢 **Planes y Contratos de Soporte IT para Empresas (B2B):**\n\n1. **Starter Pyme (de 1 a 10 equipos):** **$99 USD/mes** ($84 USD/mes con plan anual). Soporte remoto ilimitado 8x5 + 1 mantenimiento preventivo trimestral + antivirus corporativo en la nube (SLA < 2 h).\n2. **Business Pro (de 11 a 35 equipos + servidores):** **$249 USD/mes** ($210 USD/mes con plan anual). Soporte 12x6 + mantenimiento bimestral + 4 visitas de emergencia al mes + mantenimiento de servidores y 20 % de descuento en Microsoft 365 (SLA < 45 min).\n3. **Enterprise Titan (de 36 a 80+ equipos):** **$590 USD/mes** ($499 USD/mes con plan anual). Soporte 24/7/365 dedicado + visitas presenciales ilimitadas + protección EDR avanzada (SLA < 20 min).\n\n💡 *Puedes utilizar la calculadora B2B en la barra superior de este chat para obtener una propuesta ajustada al número exacto de estaciones de tu empresa.*`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           recommendationData: {
             type: 'b2b_plans',
-            actionText: 'Ver Matriz de Contratos',
+            actionText: 'Explorar Planes Corporativos',
             serviceId: 'subscriptions'
           }
         };
@@ -116,16 +107,15 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         return;
       }
 
-      // C. Licencias query
       if (textLower.includes('licencia') || textLower.includes('kaspersky') || textLower.includes('office') || textLower.includes('microsoft') || textLower.includes('windows') || textLower.includes('antivirus')) {
         const reply = {
           id: `msg-${Date.now()}`,
           sender: 'bot',
-          text: `🛡️ **Lista Oficial de Licenciamiento Blueprint by QuintoNodo:**\n\n• **Kaspersky Total Security (1 Año / 3 Dispositivos)**: **$32 USD** (Antivirus + Firewall + Protección Bancaria).\n• **Kaspersky Endpoint Security Cloud (B2B por puesto)**: **$42 USD/año**.\n• **Microsoft 365 Business Standard**: **$145 USD/año** (Word, Excel, PowerPoint, Teams y 1TB OneDrive).\n• **Microsoft 365 Familia (Hasta 6 usuarios)**: **$85 USD/año**.\n• **Windows 11 Pro Key Oficial**: **$35 USD** (Activación digital permanente).\n\n*Todas las licencias cuentan con factura legal y soporte de activación remota asistida.*`,
+          text: `🛡️ **Catálogo de Licenciamiento Oficial Blueprint by QuintoNodo:**\n\n• **Kaspersky Total Security (1 Año / 3 Dispositivos):** **$32 USD** (~${formatCOP(convertUSDToCOP(32))} COP).\n• **Kaspersky Endpoint Security Cloud (B2B por estación):** **$42 USD/año**.\n• **Microsoft 365 Business Standard:** **$145 USD/año** (Word, Excel, PowerPoint, Outlook, Teams y 1 TB en OneDrive).\n• **Microsoft 365 Familia (Hasta 6 usuarios):** **$85 USD/año**.\n• **Licencia Oficial Windows 11 Pro Permanente:** **$35 USD**.\n\n*Todas nuestras licencias incluyen factura electrónica legal de la DIAN y acompañamiento remoto para su activación.*`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           recommendationData: {
             type: 'license_quote',
-            actionText: 'Comprar Licencias',
+            actionText: 'Solicitar Licencias Oficiales',
             serviceId: 'licencias_software'
           }
         };
@@ -134,11 +124,10 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         return;
       }
 
-      // D. Fallback generic technical response
       const genericReply = {
         id: `msg-${Date.now()}`,
         sender: 'bot',
-        text: `Entendido. En **Blueprint by QuintoNodo Tech** resolvemos requerimientos de infraestructura IT y soporte express:\n\n• **Mantenimiento Preventivo y Correctivo en Sitio**: $45 USD por puesto o paquetes con SLA.\n• **Reparación de Celulares y Tablets**: En 35 minutos con repuestos originales.\n• **Soporte Remoto Inmediato**: Conexión segura SSL en menos de 5 minutos.\n\n¿Prefieres que te cotice un paquete para tu empresa o una reparación individual para tu equipo?`,
+        text: `Con gusto te asesoro. En **Blueprint by QuintoNodo Tech** brindamos soluciones integrales de tecnología en Bogotá, D.C.:\n\n• **Mantenimiento Preventivo y Correctivo en Sitio:** Desde $45 USD por estación o mediante contratos mensuales con SLA garantizado.\n• **Reparación Exprés de Celulares y Portátiles:** Atención de 30 a 45 minutos con repuestos de grado original y 6 meses de garantía.\n• **Mesa de Ayuda Remota:** Asistencia cifrada en menos de 5 minutos.\n\n¿Deseas cotizar un plan corporativo para tu empresa o una intervención puntual para tu dispositivo?`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         recommendationData: null
       };
@@ -149,24 +138,22 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
 
   const handleSendMessage = (e) => {
     e?.preventDefault();
-    if (!inputQuery.trim()) return;
+    const cleaned = sanitizeText(inputQuery, 400);
+    if (!cleaned) return;
 
     const userMsg = {
       id: `usr-${Date.now()}`,
       sender: 'user',
-      text: inputQuery.trim(),
+      text: cleaned,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMsg]);
-    const query = inputQuery;
     setInputQuery('');
-    generateAIResponse(query);
+    generateAIResponse(cleaned);
   };
 
-  // Quick Action Buttons
   const handleQuickPrompt = (promptText) => {
-    setInputQuery(promptText);
     const userMsg = {
       id: `usr-${Date.now()}`,
       sender: 'user',
@@ -177,13 +164,12 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
     generateAIResponse(promptText);
   };
 
-  // Calculate Instant B2B Quote
   const calculateB2BQuote = () => {
     let suggestedTier = SUBSCRIPTION_TIERS[0];
     if (b2bWorkstations > 35) {
-      suggestedTier = SUBSCRIPTION_TIERS[2]; // Enterprise
+      suggestedTier = SUBSCRIPTION_TIERS[2];
     } else if (b2bWorkstations > 10 || b2bHasServers) {
-      suggestedTier = SUBSCRIPTION_TIERS[1]; // Business Pro
+      suggestedTier = SUBSCRIPTION_TIERS[1];
     }
 
     const licenseCost = b2bNeedLicenses ? b2bWorkstations * 8 : 0;
@@ -193,11 +179,11 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
     const quoteMsg = {
       id: `msg-${Date.now()}`,
       sender: 'bot',
-      text: `📊 **Propuesta de Cotización B2B Personalizada:**\n\n• **Puestos de Trabajo:** ${b2bWorkstations} equipos\n• **Servidores/Infraestructura:** ${b2bHasServers ? 'Sí, incluye mantenimiento térmico' : 'Solo puestos'}\n• **Licenciamiento Cloud:** ${b2bNeedLicenses ? 'Incluido (Kaspersky Cloud + Office 365)' : 'No requerido'}\n\n🏆 **Plan Sugerido:** **${suggestedTier.name}**\n• **Inversión Mensual (Mes a Mes):** **$${monthlyTotal} USD/mes**\n• **Inversión Anual (Ahorro del 15%):** **$${annualMonthly} USD/mes** ($${annualMonthly * 12} USD/año)\n• **SLA Remoto:** ${suggestedTier.slaRemote} | **SLA en Sitio:** ${suggestedTier.slaOnsite}\n\n*Incluye ${suggestedTier.features[1]} y ${suggestedTier.features[2]}.*`,
+      text: `📊 **Propuesta Ejecutiva de Soporte IT (B2B):**\n\n• **Estaciones de Cómputo:** ${b2bWorkstations} equipos\n• **Infraestructura de Servidores:** ${b2bHasServers ? 'Sí, incluye mantenimiento térmico de servidores y gabinetes' : 'Solo estaciones de trabajo'}\n• **Licenciamiento en la Nube:** ${b2bNeedLicenses ? 'Incluido (Kaspersky Endpoint Cloud + gestión Microsoft 365)' : 'No requerido'}\n\n🏆 **Plan Recomendado:** **${suggestedTier.name}**\n• **Modalidad Mensual:** **$${monthlyTotal} USD/mes** (~${formatCOP(convertUSDToCOP(monthlyTotal))} COP/mes)\n• **Modalidad Anual (-15 % de ahorro):** **$${annualMonthly} USD/mes** (~${formatCOP(convertUSDToCOP(annualMonthly))} COP/mes)\n• **SLA Soporte Remoto:** ${suggestedTier.slaRemote} | **SLA en Sitio:** ${suggestedTier.slaOnsite}\n\n*Incluye ${suggestedTier.features[1].toLowerCase()} y ${suggestedTier.features[2].toLowerCase()}.*`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       recommendationData: {
         type: 'b2b_plans',
-        actionText: `Contratar ${suggestedTier.name}`,
+        actionText: `Solicitar ${suggestedTier.name}`,
         serviceId: 'subscriptions'
       }
     };
@@ -207,26 +193,25 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
     playSoundEffect('success');
   };
 
-  // Calculate Instant B2C Quote
   const calculateB2CQuote = () => {
     let estPrice = '$45 - $85 USD';
-    let estTime = '35 - 45 min';
+    let estTime = '35 a 45 minutos';
 
     if (b2cIssue.toLowerCase().includes('oled') || b2cIssue.toLowerCase().includes('pantalla')) {
       estPrice = b2cBrand === 'Apple' ? '$85 - $130 USD' : '$65 - $110 USD';
-      estTime = '40 min';
+      estTime = '40 minutos';
     } else if (b2cIssue.toLowerCase().includes('batería') || b2cIssue.toLowerCase().includes('bateria')) {
       estPrice = '$35 - $50 USD';
-      estTime = '30 min';
+      estTime = '30 minutos';
     } else if (b2cIssue.toLowerCase().includes('puerto')) {
       estPrice = '$28 - $38 USD';
-      estTime = '35 min';
+      estTime = '35 minutos';
     }
 
     const quoteMsg = {
       id: `msg-${Date.now()}`,
       sender: 'bot',
-      text: `📱 **Presupuesto Estimado de Reparación Express (B2C):**\n\n• **Dispositivo:** ${b2cBrand} - ${b2cModel}\n• **Diagnóstico:** ${b2cIssue}\n• **Costo Estimado:** **${estPrice}** (Mano de obra + Refacción Grado Original)\n• **Tiempo Récord de Reparación:** **${estTime}**\n• **Garantía Blueprint:** 6 Meses por escrito.\n\n¿Deseas que un técnico acuda a tu domicilio en el Móvil Express o prefieres llevarlo a la estación de servicio?`,
+      text: `📱 **Presupuesto Estimado de Reparación Exprés (B2C):**\n\n• **Dispositivo:** ${b2cBrand} — ${b2cModel}\n• **Diagnóstico Preliminar:** ${b2cIssue}\n• **Inversión Estimada:** **${estPrice}** (incluye mano de obra especializada y repuesto de grado original)\n• **Tiempo Estimado de Intervención:** **${estTime}**\n• **Garantía Oficial Blueprint:** 6 meses por escrito.\n\n¿Deseas programar un especialista a domicilio o agendar tu visita en nuestro laboratorio central?`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       recommendationData: {
         type: 'mobile_quote',
@@ -243,7 +228,7 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
   return (
     <div className={`flex flex-col bg-[#0a152e] border border-blue-500/25 rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/60 ${isOpenAsModal ? 'max-w-4xl w-full h-[88vh]' : 'h-[750px] w-full'}`}>
       
-      {/* Top Header */}
+      {/* Encabezado Superior */}
       <div className="bg-[#060b18]/90 border-b border-blue-500/20 px-6 py-4 flex items-center justify-between backdrop-blur-md">
         <div className="flex items-center space-x-3">
           <div className="relative">
@@ -265,17 +250,17 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
               </span>
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1">
-              <span>Cotizador Inteligente B2B & B2C</span>
+              <span>Cotizador Inteligente B2B y B2C</span>
               <span>•</span>
               <span className="text-emerald-400 font-medium">En Línea</span>
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Selectores Rápidos de Calculadora */}
         <div className="flex items-center space-x-2">
-          {/* Quick Cotizador Selectors */}
           <button
+            type="button"
             onClick={() => setActiveMode(activeMode === 'b2b_quote' ? 'chat' : 'b2b_quote')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeMode === 'b2b_quote' 
@@ -284,10 +269,11 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
             }`}
           >
             <Building2 className="w-3.5 h-3.5 text-[#00f0ff]" />
-            <span>Cotizar B2B</span>
+            <span>Cotizar Plan B2B</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveMode(activeMode === 'b2c_quote' ? 'chat' : 'b2c_quote')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeMode === 'b2c_quote' 
@@ -296,20 +282,12 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
             }`}
           >
             <Smartphone className="w-3.5 h-3.5 text-[#00f0ff]" />
-            <span>Cotizar Celular (B2C)</span>
-          </button>
-
-          {/* AI Settings Config */}
-          <button
-            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className="p-2 rounded-xl bg-slate-900/80 text-slate-400 hover:text-white border border-slate-700/60 transition-colors"
-            title="Configurar Motor IA (Gemini / Ollama)"
-          >
-            <Settings className="w-4 h-4" />
+            <span>Cotizar Reparación (B2C)</span>
           </button>
 
           {isOpenAsModal && (
             <button
+              type="button"
               onClick={onCloseModal}
               className="p-2 rounded-xl bg-slate-900/80 text-slate-400 hover:text-white border border-slate-700/60 transition-colors"
             >
@@ -319,103 +297,45 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         </div>
       </div>
 
-      {/* Settings Drawer (if open) */}
-      {isSettingsOpen && (
-        <div className="bg-[#071329] border-b border-blue-500/20 p-4 space-y-3 animate-in fade-in duration-200 text-xs">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-white flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-[#00f0ff]" />
-              Configuración de Motor de Inteligencia Artificial
-            </h4>
-            <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-white">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className="text-slate-400 font-medium block mb-1">Proveedor IA</label>
-              <select
-                value={aiConfig.provider}
-                onChange={(e) => {
-                  const updated = { ...aiConfig, provider: e.target.value };
-                  setAiConfig(updated);
-                  saveAiConfig(updated);
-                }}
-                className="w-full bg-[#0a152e] border border-blue-500/30 rounded-xl px-3 py-2 text-white font-medium focus:outline-none focus:border-[#00f0ff]"
-              >
-                <option value="simulation">Simulador Inteligente QuintoNodo (Sin API Key)</option>
-                <option value="gemini">Google Gemini AI (API Key Directa)</option>
-                <option value="ollama">Ollama / Servidor Local OpenSource</option>
-              </select>
-            </div>
-
-            {aiConfig.provider === 'gemini' && (
-              <div className="md:col-span-2">
-                <label className="text-slate-400 font-medium block mb-1">Google Gemini API Key</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      value={aiConfig.geminiApiKey}
-                      onChange={(e) => {
-                        const updated = { ...aiConfig, geminiApiKey: e.target.value };
-                        setAiConfig(updated);
-                        saveAiConfig(updated);
-                      }}
-                      placeholder="AIzaSy..."
-                      className="w-full bg-[#0a152e] border border-blue-500/30 rounded-xl px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#00f0ff]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-white"
-                    >
-                      {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* QUICK B2B QUOTER WIZARD DRAWER */}
+      {/* Panel de Calculadora B2B */}
       {activeMode === 'b2b_quote' && (
         <div className="bg-[#081533] border-b border-blue-500/30 p-5 space-y-4 animate-in slide-in-from-top-4 duration-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-[#00f0ff]" />
-              <h4 className="font-extrabold text-white text-sm">Calculadora Express de Contratos B2B</h4>
+              <h4 className="font-extrabold text-white text-sm">Calculadora Ejecutiva de Contratos B2B</h4>
             </div>
-            <button onClick={() => setActiveMode('chat')} className="text-slate-400 hover:text-white text-xs">
-              Cerrar Asistente
+            <button
+              type="button"
+              onClick={() => setActiveMode('chat')}
+              className="text-slate-400 hover:text-white text-xs"
+            >
+              Cerrar Calculadora
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-[#0a1b3d] p-3 rounded-2xl border border-blue-500/20">
               <label className="text-xs text-slate-300 font-bold block mb-1">
-                Puestos de Cómputo: <span className="text-[#00f0ff] font-extrabold">{b2bWorkstations}</span>
+                Estaciones de Cómputo: <span className="text-[#00f0ff] font-extrabold">{b2bWorkstations}</span>
               </label>
               <input
                 type="range"
                 min="3"
                 max="80"
                 value={b2bWorkstations}
-                onChange={(e) => setB2bWorkstations(parseInt(e.target.value))}
+                onChange={(e) => setB2bWorkstations(parseInt(e.target.value, 10))}
                 className="w-full accent-[#00f0ff] cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                <span>3 Pymes</span>
-                <span>35 Mediana</span>
-                <span>80+ Corp</span>
+                <span>3 (Pyme)</span>
+                <span>35 (Mediana)</span>
+                <span>80+ (Corporativo)</span>
               </div>
             </div>
 
             <div className="bg-[#0a1b3d] p-3 rounded-2xl border border-blue-500/20 flex flex-col justify-center">
-              <label className="text-xs text-slate-300 font-bold block mb-2">Infraestructura</label>
+              <label className="text-xs text-slate-300 font-bold block mb-2">Infraestructura Crítica</label>
               <label className="flex items-center gap-2 text-xs text-white cursor-pointer">
                 <input
                   type="checkbox"
@@ -423,12 +343,12 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
                   onChange={(e) => setB2bHasServers(e.target.checked)}
                   className="rounded border-blue-400 text-[#0070f3] focus:ring-0 w-4 h-4"
                 />
-                <span>Incluye Servidores & Racks</span>
+                <span>Incluye Servidores y Gabinetes</span>
               </label>
             </div>
 
             <div className="bg-[#0a1b3d] p-3 rounded-2xl border border-blue-500/20 flex flex-col justify-center">
-              <label className="text-xs text-slate-300 font-bold block mb-2">Software Oficial</label>
+              <label className="text-xs text-slate-300 font-bold block mb-2">Licenciamiento Corporativo</label>
               <label className="flex items-center gap-2 text-xs text-white cursor-pointer">
                 <input
                   type="checkbox"
@@ -436,33 +356,38 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
                   onChange={(e) => setB2bNeedLicenses(e.target.checked)}
                   className="rounded border-blue-400 text-[#0070f3] focus:ring-0 w-4 h-4"
                 />
-                <span>Antivirus Cloud + Office 365</span>
+                <span>Antivirus en la Nube + Microsoft 365</span>
               </label>
             </div>
           </div>
 
           <div className="flex justify-end pt-1">
             <button
+              type="button"
               onClick={calculateB2BQuote}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs shadow-lg shadow-cyan-500/25 flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Generar Cotización y Plan Recomendado</span>
+              <span>Generar Propuesta y Plan Recomendado</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* QUICK B2C QUOTER WIZARD DRAWER */}
+      {/* Panel de Calculadora B2C */}
       {activeMode === 'b2c_quote' && (
         <div className="bg-[#081533] border-b border-cyan-500/30 p-5 space-y-4 animate-in slide-in-from-top-4 duration-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[#00f0ff]" />
-              <h4 className="font-extrabold text-white text-sm">Cotizador Express de Reparación de Celulares & Laptops</h4>
+              <h4 className="font-extrabold text-white text-sm">Cotizador Exprés de Reparación Móvil y Portátiles</h4>
             </div>
-            <button onClick={() => setActiveMode('chat')} className="text-slate-400 hover:text-white text-xs">
-              Cerrar Asistente
+            <button
+              type="button"
+              onClick={() => setActiveMode('chat')}
+              className="text-slate-400 hover:text-white text-xs"
+            >
+              Cerrar Calculadora
             </button>
           </div>
 
@@ -485,7 +410,7 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
             </div>
 
             <div>
-              <label className="text-xs text-slate-300 font-bold block mb-1">Modelo Específico</label>
+              <label className="text-xs text-slate-300 font-bold block mb-1">Modelo de Referencia</label>
               <select
                 value={b2cModel}
                 onChange={(e) => setB2cModel(e.target.value)}
@@ -498,35 +423,36 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
             </div>
 
             <div>
-              <label className="text-xs text-slate-300 font-bold block mb-1">Tipo de Falla / Diagnóstico</label>
+              <label className="text-xs text-slate-300 font-bold block mb-1">Síntoma o Falla Principal</label>
               <select
                 value={b2cIssue}
                 onChange={(e) => setB2cIssue(e.target.value)}
                 className="w-full bg-[#0a1b3d] border border-blue-500/30 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:outline-none"
               >
-                <option value="Pantalla OLED Rota / Sin Imagen">Pantalla Rota / Vidrio Quebrado</option>
-                <option value="Batería Degradada (< 80%)">Batería se descarga rápido</option>
-                <option value="Puerto de Carga / Micrófono">No carga / Conector flojo</option>
-                <option value="Daño por Agua / Líquidos">Se cayó al agua / No enciende</option>
-                <option value="Cámara o Sensor Dañado">Cámara borrosa / Cristal roto</option>
-                <option value="Lentitud / Virus / Formateo">Lentitud / Formateo o Software</option>
+                <option value="Pantalla OLED rota o sin imagen">Pantalla rota o sin imagen</option>
+                <option value="Batería degradada (capacidad < 80 %)">Batería se descarga rápidamente</option>
+                <option value="Puerto de carga o micrófono">Falla en el puerto de carga</option>
+                <option value="Recuperación por contacto con líquidos">Contacto accidental con líquidos</option>
+                <option value="Módulo de cámara o lente roto">Cámara desenfocada o lente roto</option>
+                <option value="Optimización de sistema y limpieza">Lentitud general o mantenimiento</option>
               </select>
             </div>
           </div>
 
           <div className="flex justify-end pt-1">
             <button
+              type="button"
               onClick={calculateB2CQuote}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold text-xs shadow-lg shadow-cyan-500/25 flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Calcular Presupuesto Express</span>
+              <span>Calcular Presupuesto Exprés</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Main Messages Scroll Area */}
+      {/* Área Principal de Conversación */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-blueprint-grid">
         {messages.map((msg) => (
           <div
@@ -544,10 +470,10 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
                 {msg.text}
               </div>
 
-              {/* Recommendation Action Button if attached */}
               {msg.recommendationData && (
                 <div className="mt-4 pt-3 border-t border-blue-500/20 flex flex-wrap gap-2">
                   <button
+                    type="button"
                     onClick={() => {
                       if (onScheduleService) onScheduleService(msg.recommendationData.serviceId);
                       if (isOpenAsModal && onCloseModal) onCloseModal();
@@ -570,43 +496,47 @@ export const BlueprintAiAssistant = ({ onScheduleService, isOpenAsModal, onClose
         {isThinking && (
           <div className="flex items-center space-x-2 text-xs text-cyan-400 bg-[#0f2042]/80 border border-blue-500/20 px-4 py-3 rounded-2xl w-fit animate-pulse">
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#00f0ff]" />
-            <span>Blueprint IA está calculando cotización y rangos de soporte...</span>
+            <span>Blueprint IA está elaborando tu cotización técnica...</span>
           </div>
         )}
 
         <div ref={chatEndRef} />
       </div>
 
-      {/* Suggested Quick Question Badges */}
+      {/* Consultas Frecuentes Sugeridas */}
       <div className="bg-[#071329] px-6 py-2.5 border-t border-blue-500/15 flex items-center gap-2 overflow-x-auto text-[11px] no-scrollbar">
-        <span className="text-slate-400 font-semibold shrink-0">Sugerencias:</span>
+        <span className="text-slate-400 font-semibold shrink-0">Consultas rápidas:</span>
         <button
-          onClick={() => handleQuickPrompt('¿Cuánto cuesta cambiar la pantalla OLED de un iPhone 15 Pro?')}
+          type="button"
+          onClick={() => handleQuickPrompt('¿Cuánto cuesta reemplazar la pantalla OLED de un iPhone 15 Pro?')}
           className="px-3 py-1 rounded-full bg-blue-950/70 hover:bg-blue-900 text-blue-200 border border-blue-500/20 shrink-0 transition-colors"
         >
-          📱 Reparación Pantalla iPhone
+          📱 Pantalla OLED iPhone
         </button>
         <button
-          onClick={() => handleQuickPrompt('¿Cuáles son los planes de suscripción para una empresa de 20 computadores?')}
+          type="button"
+          onClick={() => handleQuickPrompt('¿Cuáles son los planes de soporte mensual para una empresa de 20 computadores?')}
           className="px-3 py-1 rounded-full bg-blue-950/70 hover:bg-blue-900 text-blue-200 border border-blue-500/20 shrink-0 transition-colors"
         >
-          🏢 Contrato Pyme 20 Puestos
+          🏢 Contrato Pyme (20 Equipos)
         </button>
         <button
-          onClick={() => handleQuickPrompt('Cotízame 10 licencias de Kaspersky Antivirus y Microsoft 365')}
+          type="button"
+          onClick={() => handleQuickPrompt('Deseo cotizar 10 licencias corporativas de Kaspersky y Microsoft 365')}
           className="px-3 py-1 rounded-full bg-blue-950/70 hover:bg-blue-900 text-blue-200 border border-blue-500/20 shrink-0 transition-colors"
         >
-          🛡️ Licencias Kaspersky & Office
+          🛡️ Licencias Kaspersky y Microsoft 365
         </button>
       </div>
 
-      {/* Bottom Input Field */}
+      {/* Campo de Entrada de Mensajes */}
       <form onSubmit={handleSendMessage} className="p-4 bg-[#060b18] border-t border-blue-500/20 flex items-center space-x-3">
         <input
           type="text"
+          maxLength={400}
           value={inputQuery}
           onChange={(e) => setInputQuery(e.target.value)}
-          placeholder="Escribe tu consulta o pide una cotización (B2B, Celulares, Licencias)..."
+          placeholder="Escribe tu requerimiento o solicita una cotización (B2B, reparación móvil o licencias)..."
           className="flex-1 bg-[#0a152e] border border-blue-500/25 rounded-2xl px-5 py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#00f0ff] focus:ring-1 focus:ring-[#00f0ff] transition-all"
         />
 

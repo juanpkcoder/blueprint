@@ -1,49 +1,48 @@
-// Blueprint by QuintoNodo Tech AI Provider Service (Gemini & Ollama / OpenSource API Integration)
+// Servicio de Inteligencia Artificial para Blueprint by QuintoNodo Tech
 
-const SYSTEM_PROMPT = `You are "Blueprint IA Assistant", an expert AI technical consultant and automatic quoting advisor for Blueprint by QuintoNodo Tech (a leading IT Express solutions firm founded by 5 technology partners).
+const SYSTEM_PROMPT = `Eres "Blueprint IA Assistant", el consultor técnico y cotizador automatizado oficial de Blueprint by QuintoNodo Tech (firma líder en soluciones tecnológicas corporativas y reparación móvil fundada por 5 especialistas en Bogotá, D.C.).
 
-Language: Always respond in clear, professional, authoritative, and friendly Spanish.
+Idioma: Responde siempre en español de Colombia claro, ejecutivo, cortés y técnicamente preciso. Nunca utilices modismos de otros países (usa "repuestos originales" en lugar de "refacciones", y "computadores" o "portátiles" en lugar de "ordenadores").
 
-BUSINESS MODEL & SERVICES (B2B & B2C):
-You assist clients and companies with 4 core technological pillars (NO EQUIPMENT RENTAL):
+MODELO DE NEGOCIO Y SERVICIOS (B2B Y B2C):
+Asistes a empresas y clientes particulares en 4 líneas tecnológicas (NO realizamos alquiler de equipos):
 
 1. CONTRATOS DE SUSCRIPCIÓN IT POR RANGOS (B2B EMPRESAS):
-   - Rango Starter Pyme (1 a 10 equipos): $99 USD/mes ($84/mes facturado anual). Incluye soporte remoto ilimitado 8x5, 1 mantenimiento preventivo presencial trimestral, antivirus centralizado, SLA < 2h.
-   - Rango Business Pro (11 a 35 equipos + 2 servidores): $249 USD/mes ($210/mes anual). Soporte 12x6, 4 visitas presenciales de emergencia/mes, mantenimiento de servidores y racks, 20% descuento en licencias, SLA < 45 min.
-   - Rango Enterprise Titan (36 a 80+ equipos): $590 USD/mes ($499/mes anual). Soporte 24/7/365 con técnico senior dedicado, visitas ilimitadas, EDR y ciberseguridad, cobertura express en smartphones corporativos, SLA < 20 min.
-   - Plan Hogar Digital (B2C Familias/Freelancers): $19 USD/mes ($16/mes anual). Hasta 4 dispositivos (2 celulares + 2 PCs), 1 mantenimiento anual, 40% descuento en refacciones celulares.
+   - Plan Starter Pyme (de 1 a 10 equipos): $99 USD/mes ($84 USD/mes con facturación anual). Incluye soporte remoto ilimitado 8x5, 1 mantenimiento preventivo presencial trimestral, antivirus gestionado en la nube, SLA < 2 h.
+   - Plan Business Pro (de 11 a 35 equipos + servidores): $249 USD/mes ($210 USD/mes anual). Soporte 12x6, mantenimiento preventivo bimestral, 4 visitas presenciales de emergencia al mes, mantenimiento de servidores y gabinetes, 20 % de descuento en licencias, SLA < 45 min.
+   - Plan Enterprise Titan (de 36 a 80+ equipos): $590 USD/mes ($499 USD/mes anual). Soporte 24/7/365 con especialista dedicado, visitas ilimitadas, protección EDR y ciberseguridad, cobertura exprés para smartphones corporativos, SLA < 20 min.
+   - Plan Hogar Digital (B2C Familias y Profesionales): $19 USD/mes ($16 USD/mes anual). Hasta 4 dispositivos (2 celulares + 2 computadores), 1 mantenimiento preventivo anual, 40 % de descuento en mano de obra para reparaciones móviles.
 
-2. MANTENIMIENTO TÉCNICO CORPORATIVO (B2B ON-DEMAND):
-   - Mantenimiento Preventivo Integral por Puesto: $45 USD/equipo.
-   - Mantenimiento Crítico de Servidores & Storage: $120 USD.
-   - Diagnóstico Correctivo de Emergencia en Sitio: $65 USD.
-   - Upgrade de Hardware (SSD NVMe / Memoria RAM) + Clonación de Datos: $55 USD.
+2. MANTENIMIENTO TÉCNICO CORPORATIVO POR DEMANDA (B2B):
+   - Mantenimiento Preventivo Integral por Estación: $45 USD/equipo.
+   - Mantenimiento Especializado de Servidores y Almacenamiento: $120 USD.
+   - Diagnóstico y Soporte Correctivo de Emergencia en Sitio: $65 USD.
+   - Actualización de Hardware (SSD NVMe / Memoria RAM) + Migración de Datos: $55 USD.
 
-3. REPARACIÓN EXPRESS DE CELULARES Y TABLETS (B2C & B2B):
-   - Pantallas OLED / Super Retina (iPhone, Samsung Galaxy, Xiaomi): $65 - $130 USD (Garantía Grado Original, TrueTone intacto).
-   - Cambio de Batería Grado Original (Salud 100%): $30 - $55 USD.
-   - Reparación de Puerto de Carga Type-C / Lightning: $25 - $40 USD.
-   - Rescate por Daño de Agua / Limpieza Ultrasónica de Placa: $45 - $65 USD.
-   - Tiempo de entrega: Express en 35 a 60 minutos con técnico en móvil o taller.
+3. REPARACIÓN EXPRÉS DE CELULARES Y TABLETS (B2C Y B2B):
+   - Pantallas OLED / Super Retina (iPhone, Samsung Galaxy, Xiaomi): $65 - $130 USD (repuestos de grado original, calibración True Tone y 6 meses de garantía escrita).
+   - Cambio de Batería Certificada (capacidad al 100 %): $30 - $55 USD.
+   - Reparación de Puerto de Carga USB-C / Lightning: $25 - $40 USD.
+   - Limpieza Ultrasónica y Recuperación de Placa por Humedad: $45 - $65 USD.
+   - Tiempo de respuesta: Atención exprés de 30 a 45 minutos a domicilio o en laboratorio central.
 
 4. VENTA DE LICENCIAS OFICIALES DE SOFTWARE:
    - Kaspersky Total Security (1 Año / 3 Dispositivos): $32 USD.
-   - Kaspersky Endpoint Security Cloud (B2B por puesto / año): $42 USD.
+   - Kaspersky Endpoint Security Cloud (B2B por estación / año): $42 USD.
    - Microsoft 365 Business Standard (Suscripción Anual): $145 USD.
-   - Microsoft 365 Familia (Hasta 6 usuarios con 1TB OneDrive c/u): $85 USD.
-   - Windows 11 Pro Key Oficial (Activación digital permanente): $35 USD.
+   - Microsoft 365 Familia (Hasta 6 usuarios con 1 TB en OneDrive c/u): $85 USD.
+   - Licencia Oficial Windows 11 Pro Permanente: $35 USD.
 
-BEHAVIOR & QUOTING RULES:
-1. When a user asks for a quotation:
-   - Identify whether they are B2B (Company/Office) or B2C (Personal/Consumer).
-   - If B2B: Ask how many computers/servers they have and recommend the appropriate Subscription Tier (Starter, Business Pro, or Enterprise Titan) or on-demand fleet maintenance, plus license bundles.
-   - If B2C (Cellphone or Laptop): Ask for the device brand, model, and symptom (e.g. broken screen, battery drain, slow Windows) and give an immediate price range and ETA.
-2. Structure quotes clearly with emojis, bullet points, price breakdown, and applicable discounts (e.g., 15% discount on annual subscriptions).
-3. If asked about renting laptops or equipment: Clarify politely that Blueprint by QuintoNodo specializes strictly in Maintenance, Repair, Subscriptions, and Software Licensing, not equipment rental.`;
+REGLAS DE ATENCIÓN Y COTIZACIÓN:
+1. Identifica si el cliente consulta para una empresa (B2B) o a título personal (B2C).
+2. Presenta presupuestos estructurados con viñetas claras, desglose de precios en USD y mención de facturación electrónica DIAN.
+3. Si preguntan por alquiler o renta de portátiles, aclara amablemente que Blueprint by QuintoNodo se especializa exclusivamente en mantenimiento, reparación, contratos de soporte con SLA y licenciamiento oficial.`;
+
+const envGeminiKey = typeof import.meta !== 'undefined' && import.meta.env ? (import.meta.env.VITE_GEMINI_API_KEY || '') : '';
 
 export const DEFAULT_AI_CONFIG = {
-  provider: 'simulation', // 'simulation' | 'gemini' | 'ollama'
-  geminiApiKey: '',
+  provider: envGeminiKey ? 'gemini' : 'simulation',
+  geminiApiKey: envGeminiKey,
   geminiModel: 'gemini-2.0-flash',
   ollamaBaseUrl: 'http://localhost:11434/v1',
   ollamaModel: 'llama3.3',
@@ -52,40 +51,48 @@ export const DEFAULT_AI_CONFIG = {
 
 export const loadAiConfig = () => {
   try {
-    const saved = localStorage.getItem('blueprint_ai_config');
-    return saved ? { ...DEFAULT_AI_CONFIG, ...JSON.parse(saved) } : DEFAULT_AI_CONFIG;
-  } catch (e) {
-    return DEFAULT_AI_CONFIG;
+    // Por seguridad, nunca almacenamos ni leemos llaves de API en localStorage persistente
+    const saved = sessionStorage.getItem('blueprint_ai_config_session');
+    if (saved) {
+      return { ...DEFAULT_AI_CONFIG, ...JSON.parse(saved) };
+    }
+  } catch {
+    // Ignorar errores de almacenamiento de sesión
   }
+  return DEFAULT_AI_CONFIG;
 };
 
 export const saveAiConfig = (config) => {
-  localStorage.setItem('blueprint_ai_config', JSON.stringify(config));
+  try {
+    sessionStorage.setItem('blueprint_ai_config_session', JSON.stringify(config));
+  } catch {
+    // Ignorar errores de almacenamiento de sesión
+  }
 };
 
 /**
- * Main dispatcher calling live API (Gemini or Ollama/OpenSource) with fallback to simulation
+ * Despachador principal hacia proveedor IA configurado o motor de simulación local
  */
 export async function sendQueryToAI(userPrompt, history = [], config = loadAiConfig()) {
   const { provider, geminiApiKey, geminiModel, ollamaBaseUrl, ollamaModel, ollamaApiKey } = config;
 
-  if (provider === 'gemini' && geminiApiKey.trim()) {
-    return callGeminiAPI(userPrompt, history, geminiApiKey, geminiModel);
+  if (provider === 'gemini' && geminiApiKey && geminiApiKey.trim()) {
+    return callGeminiAPI(userPrompt, history, geminiApiKey.trim(), geminiModel);
   }
 
-  if (provider === 'ollama' && ollamaBaseUrl.trim()) {
-    return callOllamaAPI(userPrompt, history, ollamaBaseUrl, ollamaModel, ollamaApiKey);
+  if (provider === 'ollama' && ollamaBaseUrl && ollamaBaseUrl.trim()) {
+    return callOllamaAPI(userPrompt, history, ollamaBaseUrl.trim(), ollamaModel, ollamaApiKey);
   }
 
-  // Fallback to null so UI caller can run local simulation engine
   return null;
 }
 
 /**
- * Google Gemini REST API Integration
+ * Integración con la API REST de Google Gemini (usando cabecera x-goog-api-key en lugar de exponer la llave en la URL)
  */
 async function callGeminiAPI(userPrompt, history, apiKey, model = 'gemini-2.0-flash') {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const safeModel = encodeURIComponent(model || 'gemini-2.0-flash');
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${safeModel}:generateContent`;
 
   const contents = [
     ...history.map(msg => ({
@@ -111,27 +118,30 @@ async function callGeminiAPI(userPrompt, history, apiKey, model = 'gemini-2.0-fl
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
     body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.error?.message || `Error en la API de Gemini (${response.status})`);
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Error en el servicio de IA (${response.status})`);
   }
 
   const data = await response.json();
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!candidateText) {
-    throw new Error('Respuesta vacía recibida de Gemini.');
+    throw new Error('Respuesta vacía recibida del proveedor de IA.');
   }
 
   return candidateText;
 }
 
 /**
- * Ollama / OpenSource OpenAI-compatible Chat API Integration
+ * Integración compatible con servidor local Ollama / OpenAI
  */
 async function callOllamaAPI(userPrompt, history, baseUrl, model = 'llama3.3', apiKey = '') {
   const cleanBase = baseUrl.replace(/\/$/, '');
@@ -147,7 +157,7 @@ async function callOllamaAPI(userPrompt, history, baseUrl, model = 'llama3.3', a
   ];
 
   const headers = { 'Content-Type': 'application/json' };
-  if (apiKey.trim()) {
+  if (apiKey && apiKey.trim()) {
     headers['Authorization'] = `Bearer ${apiKey.trim()}`;
   }
 
@@ -162,15 +172,14 @@ async function callOllamaAPI(userPrompt, history, baseUrl, model = 'llama3.3', a
   });
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Error en la API de Ollama/OpenSource (${response.status}): ${errText.slice(0, 150)}`);
+    throw new Error(`Error en el servidor local de IA (${response.status})`);
   }
 
   const data = await response.json();
   const replyText = data.choices?.[0]?.message?.content;
 
   if (!replyText) {
-    throw new Error('Respuesta vacía de la API OpenSource.');
+    throw new Error('Respuesta vacía del servidor local de IA.');
   }
 
   return replyText;

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Repositorio Privado Confidencial de Técnicos (Aislado)
+tech-portal-private/
+

@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { 
-  Shield, Users, Activity, DollarSign, Smartphone, MapPin, 
-  CheckCircle2, RefreshCw, AlertTriangle, UserCheck, Play, 
-  TrendingUp, Sliders, Bell, Cpu, Zap, Radio, Check, X, Terminal, MessageSquare,
-  Building2, Award, Key, Laptop
+  Shield, Users, Activity, Zap, Award
 } from 'lucide-react';
 import { INITIAL_TECHNICIANS, SUBSCRIPTION_TIERS } from '../data/mockData';
 import { AUTOMATION_RULES, INITIAL_AUTOMATION_LOGS } from '../services/automationService';
 import { playSoundEffect } from '../utils/soundEffects';
 
-export const AdminDispatcherPanel = ({ orders, onUpdateOrderStatus, onAssignTechnician }) => {
-  const [techs, setTechs] = useState(INITIAL_TECHNICIANS);
-  const [automationRules, setAutomationRules] = useState(AUTOMATION_RULES);
-  const [automationLogs, setAutomationLogs] = useState(INITIAL_AUTOMATION_LOGS);
+export const AdminDispatcherPanel = ({ orders, onUpdateOrderStatus }) => {
+  const [techs] = useState(INITIAL_TECHNICIANS);
+  const [automationRules] = useState(AUTOMATION_RULES);
+  const [automationLogs] = useState(INITIAL_AUTOMATION_LOGS);
   const [activeAdminTab, setActiveAdminTab] = useState('dispatch'); // 'dispatch' | 'automation' | 'subscriptions'
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.priceTotal, 0);

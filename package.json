@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "portal": "vite tech-portal-private --config tech-portal-private/vite.config.js",
+    "portal:build": "vite build tech-portal-private --config tech-portal-private/vite.config.js",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tunnel": "npx --yes cloudflared tunnel --url http://localhost:5173"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
