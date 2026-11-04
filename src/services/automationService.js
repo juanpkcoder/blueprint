@@ -1,5 +1,7 @@
 // Motor de Automatización y Asignación Georreferenciada de Blueprint by QuintoNodo Tech
 
+import { OFFICIAL_PHONE_DISPLAY } from '../data/mockData';
+
 export const AUTOMATION_RULES = [
   {
     id: 'rule-auto-dispatch',
@@ -102,7 +104,7 @@ export const runOrderAutomationPipeline = (order, availableTechnicians = []) => 
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     vehicle: 'Nodo Móvil Blueprint #01',
     plate: 'BPT-101 Bogotá',
-    phone: '+57 310 000 0101'
+    phone: OFFICIAL_PHONE_DISPLAY
   };
 
   logs.push({

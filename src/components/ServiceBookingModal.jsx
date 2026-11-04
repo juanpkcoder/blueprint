@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Building2, Smartphone, ShieldCheck, CreditCard, 
   CheckCircle2, ArrowRight, Zap, Sparkles, Check, 
-  Download, Mail, QrCode, Send, Copy, Lock
+  Download, Mail, QrCode, Send, Copy, Lock, MessageCircle
 } from 'lucide-react';
-import { SERVICE_CATEGORIES, INITIAL_TECHNICIANS, MOBILE_DEVICES_LIST } from '../data/mockData';
+import { SERVICE_CATEGORIES, INITIAL_TECHNICIANS, MOBILE_DEVICES_LIST, OFFICIAL_PHONE_DISPLAY, buildOfficialWhatsAppUrl } from '../data/mockData';
 import { runOrderAutomationPipeline } from '../services/automationService';
 import { formatCOP, formatUSD, convertUSDToCOP } from '../utils/currencyUtils';
 import { escapeHtml, sanitizeText, isValidEmail } from '../utils/securityUtils';
@@ -225,7 +225,7 @@ export const ServiceBookingModal = ({ isOpen, onClose, onCreateOrder, preselecte
           </div>
           <div class="footer">
             <p>© 2026 Blueprint by QuintoNodo Tech. Soporte IT Corporativo, Reparación Móvil y Contratos con SLA.</p>
-            <p>Garantía técnica respaldada por los 5 Nodos Especializados de QuintoNodo en Bogotá, D.C.</p>
+            <p>Garantía respaldada por los 5 Nodos Especializados • WhatsApp Oficial: +57 321 228 8097 • Bogotá, D.C.</p>
           </div>
         </div>
         <script>window.print();</script>
@@ -623,7 +623,7 @@ export const ServiceBookingModal = ({ isOpen, onClose, onCreateOrder, preselecte
                     maxLength={40}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+57 310 987 6543"
+                    placeholder="Ej.: 321 228 8097"
                     className="w-full bg-[#060b18] border border-blue-500/30 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#00f0ff]"
                   />
                 </div>
@@ -858,6 +858,18 @@ export const ServiceBookingModal = ({ isOpen, onClose, onCreateOrder, preselecte
                   )}
                 </button>
               </div>
+
+              <a
+                href={buildOfficialWhatsAppUrl(
+                  `Hola Blueprint by QuintoNodo Tech, acabo de generar el Ticket Oficial *${generatedOrder.ticketCode}*.\n• Servicio: ${generatedOrder.serviceName}\n• Cliente: ${generatedOrder.customerName}\n• Dirección: ${generatedOrder.address}\n• Total: $${generatedOrder.priceTotal} USD (${formatCOP(generatedOrder.priceTotalCOP)} COP)`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-95 transition-all"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Notificar Orden por WhatsApp Oficial ({OFFICIAL_PHONE_DISPLAY})</span>
+              </a>
 
             </div>
           )}

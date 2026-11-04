@@ -67,3 +67,19 @@ npm run dev
 # Compilar para producción
 npm run build
 ```
+
+---
+
+## ☁️ Despliegue en Producción (Vercel + Supabase)
+
+1. **Base de Datos en Supabase:**
+   - Crea un nuevo proyecto en Supabase y abre **SQL Editor**.
+   - Ejecuta el script completo ubicado en `supabase/schema.sql` (crea tablas, índices, políticas RLS y los 5 nodos de QuintoNodo).
+2. **Variables de Entorno en Vercel:**
+   - Importa este repositorio en Vercel (detecta `vercel.json` y Vite automáticamente).
+   - En **Settings -> Environment Variables**, agrega:
+     - `VITE_SUPABASE_URL`
+     - `VITE_SUPABASE_ANON_KEY`
+     - `VITE_WHATSAPP_NUMBER=573212288097`
+3. **Línea Oficial de Atención (Bogotá, D.C.):**
+   - WhatsApp Corporativo Único: **+57 321 228 8097** (`https://wa.me/573212288097`)

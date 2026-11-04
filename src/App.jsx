@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Zap, Smartphone, Headphones, ShieldCheck, 
-  Award, ChevronRight, Radio, Bot, X, Building2
+  Award, ChevronRight, Radio, Bot, X, Building2, MessageCircle
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { LiveTrackingMap } from './components/LiveDispatchMap';
@@ -15,22 +15,40 @@ import { CookieBanner } from './components/PreferencesPanel';
 import { SecurityPolicyModal } from './components/SecurityPolicyModal';
 import { NotFoundView } from './components/NotFoundView';
 import { TechnicianProfileModal } from './components/TechnicianProfileModal';
-import { INITIAL_ORDERS, CITY_LOCATIONS, SERVICE_CATEGORIES } from './data/mockData';
+import { INITIAL_ORDERS, CITY_LOCATIONS, SERVICE_CATEGORIES, OFFICIAL_PHONE_DISPLAY, buildOfficialWhatsAppUrl } from './data/mockData';
+import { supabaseRest, isSupabaseConfigured } from './services/supabaseClient';
 import { formatCOP, convertUSDToCOP } from './utils/currencyUtils';
 import { playSoundEffect } from './utils/soundEffects';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('request'); // 'request' | 'subscriptions' | 'aibot' | 'tracking' | 'remote' | 'orders' | '404'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.pathname && window.location.pathname !== '/') {
+      return '404';
+    }
+    return 'request';
+  }); // 'request' | 'subscriptions' | 'aibot' | 'tracking' | 'remote' | 'orders' | '404'
   const [selectedCity] = useState(CITY_LOCATIONS[0]);
   const [currency, setCurrency] = useState('dual'); // 'cop' | 'usd' | 'dual'
 
-  // Persistencia de órdenes del cliente en almacenamiento local
+  const handleNavigateTab = (nextTab) => {
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
+    setActiveTab(nextTab);
+  };
+
+  // Persistencia de órdenes del cliente en almacenamiento local + sincronización Supabase
   const [orders, setOrders] = useState(() => {
     try {
       const saved = localStorage.getItem('blueprint_orders_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(ord => ({
+            ...ord,
+            technician: ord.technician ? { ...ord.technician, phone: OFFICIAL_PHONE_DISPLAY } : ord.technician
+          }));
+        }
       }
     } catch (e) {
       console.warn('Error al recuperar órdenes guardadas:', e);
@@ -64,10 +82,36 @@ export function App() {
   }, [orders]);
 
   const handleCreateOrder = (newOrder) => {
-    setOrders(prev => [newOrder, ...prev]);
-    setActiveOrderTrack(newOrder);
-    setActiveTab('tracking');
+    const normalizedOrder = {
+      ...newOrder,
+      technician: newOrder.technician ? { ...newOrder.technician, phone: OFFICIAL_PHONE_DISPLAY } : newOrder.technician
+    };
+    setOrders(prev => [normalizedOrder, ...prev]);
+    setActiveOrderTrack(normalizedOrder);
+    handleNavigateTab('tracking');
     playSoundEffect('order_created');
+
+    if (isSupabaseConfigured()) {
+      supabaseRest.upsert('public_orders', {
+        id: normalizedOrder.id,
+        ticket_code: normalizedOrder.ticketCode || `TKT-${normalizedOrder.id}`,
+        service_type: normalizedOrder.serviceType || 'mantenimiento_b2b',
+        service_name: normalizedOrder.serviceName,
+        customer_name: normalizedOrder.customerName,
+        customer_email: normalizedOrder.customerEmail || null,
+        address: normalizedOrder.address || null,
+        phone: normalizedOrder.phone || null,
+        urgency: normalizedOrder.urgency || null,
+        price_total_usd: Number(normalizedOrder.priceTotal || 0),
+        price_total_cop: Number(normalizedOrder.priceTotalCOP || convertUSDToCOP(normalizedOrder.priceTotal || 0)),
+        status: normalizedOrder.status || 'tecnico_asignado',
+        eta_minutes: Number(normalizedOrder.etaMinutes || 40),
+        payment_method: normalizedOrder.paymentMethod || null,
+        notes: normalizedOrder.notes || null,
+        technician_snapshot: normalizedOrder.technician || null,
+        updated_at: new Date().toISOString()
+      }, 'id').catch(() => {});
+    }
   };
 
   const handleUpdateOrderStatus = (orderId, newStatus) => {
@@ -77,15 +121,30 @@ export function App() {
       }
       return o;
     }));
+    if (isSupabaseConfigured()) {
+      supabaseRest.update('public_orders', `id=eq.${encodeURIComponent(orderId)}`, {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      }).catch(() => {});
+    }
   };
 
   const handleRateOrder = (orderId, ratingStars, feedback) => {
+    let nextNotes = '';
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
-        return { ...o, rating: ratingStars, notes: `${o.notes} [Calificación: ${feedback}]` };
+        nextNotes = `${o.notes} [Calificación: ${feedback}]`;
+        return { ...o, rating: ratingStars, notes: nextNotes };
       }
       return o;
     }));
+    if (isSupabaseConfigured()) {
+      supabaseRest.update('public_orders', `id=eq.${encodeURIComponent(orderId)}`, {
+        rating: ratingStars,
+        notes: nextNotes || feedback,
+        updated_at: new Date().toISOString()
+      }).catch(() => {});
+    }
   };
 
   const handleOpenBookingWithCategory = (catId) => {
@@ -110,7 +169,7 @@ export function App() {
       {/* Barra de Navegación */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigateTab}
         onOpenBookingModal={() => {
           setBookingServiceCategory(null);
           setIsBookingModalOpen(true);
@@ -428,8 +487,8 @@ export function App() {
         {activeTab === '404' && (
           <div key="tab-404" className="tab-transition">
             <NotFoundView
-              onBackHome={() => setActiveTab('request')}
-              requestedPath="/recurso-no-disponible"
+              onBackHome={() => handleNavigateTab('request')}
+              requestedPath={typeof window !== 'undefined' ? window.location.pathname : '/recurso-no-disponible'}
             />
           </div>
         )}
@@ -522,6 +581,16 @@ export function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400 font-semibold">
+            <a
+              href={buildOfficialWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 font-bold"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>WhatsApp Oficial: {OFFICIAL_PHONE_DISPLAY}</span>
+            </a>
+            <span>•</span>
             <button 
               type="button"
               onClick={() => setIsSecurityModalOpen(true)}

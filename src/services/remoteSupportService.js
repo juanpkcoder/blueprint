@@ -1,5 +1,7 @@
 // Servicio de Sincronización en Tiempo Real de Soporte Remoto y Mesa de Ayuda
-// En producción utiliza VITE_RELAY_API_URL (HTTPS) o modo local seguro sin exponer conexiones HTTP inseguras
+// Prioridad: 1) Supabase PostgreSQL (Producción Vercel) -> 2) Relay SSE Local -> 3) Almacenamiento Local
+
+import { supabaseRest, isSupabaseConfigured } from './supabaseClient';
 
 const getRelayApiBase = () => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_RELAY_API_URL) {
@@ -14,12 +16,43 @@ const getRelayApiBase = () => {
 const API_BASE = getRelayApiBase();
 const STORAGE_KEY = 'blueprint_remote_support_sessions_v1';
 
+const mapRowToSession = (row) => ({
+  id: row.id,
+  createdAt: row.created_label || new Date(row.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+  customerName: row.customer_name,
+  company: row.company || '',
+  issue: row.issue,
+  remoteTool: row.remote_tool || 'AnyDesk',
+  connectionId: row.connection_id || '',
+  status: row.status || 'esperando_tecnico',
+  assignedTech: row.assigned_tech || null,
+  messages: Array.isArray(row.messages) ? row.messages : [],
+  logs: Array.isArray(row.logs) ? row.logs : []
+});
+
+const mapSessionToRow = (session) => ({
+  id: session.id,
+  customer_name: session.customerName,
+  company: session.company || null,
+  issue: session.issue,
+  remote_tool: session.remoteTool || 'AnyDesk',
+  connection_id: session.connectionId || null,
+  status: session.status || 'esperando_tecnico',
+  assigned_tech: session.assignedTech || null,
+  messages: session.messages || [],
+  logs: session.logs || [],
+  created_label: session.createdAt,
+  updated_at: new Date().toISOString()
+});
+
 class RemoteSupportService {
   constructor() {
     this.sessions = this.loadLocalSessions();
     this.listeners = new Set();
     this.eventSource = null;
-    this.initSSE();
+    this.pollTimer = null;
+    this.initRealtime();
   }
 
   loadLocalSessions() {
@@ -42,8 +75,15 @@ class RemoteSupportService {
     this.notifyListeners();
   }
 
-  initSSE() {
-    if (typeof window === 'undefined' || !API_BASE) return;
+  initRealtime() {
+    if (typeof window === 'undefined') return;
+
+    if (isSupabaseConfigured()) {
+      this.startSupabasePolling();
+      return;
+    }
+
+    if (!API_BASE) return;
 
     try {
       this.eventSource = new EventSource(`${API_BASE}/events`);
@@ -110,7 +150,29 @@ class RemoteSupportService {
     }
   }
 
+  startSupabasePolling() {
+    if (this.pollTimer || typeof window === 'undefined') return;
+    this.pollTimer = window.setInterval(() => {
+      if (this.listeners.size > 0 && document.visibilityState === 'visible') {
+        this.getSessions().catch(() => {});
+      }
+    }, 5000);
+  }
+
   async getSessions() {
+    if (isSupabaseConfigured()) {
+      try {
+        const rows = await supabaseRest.select('remote_sessions', 'select=*&order=created_at.desc&limit=40');
+        if (Array.isArray(rows)) {
+          const mapped = rows.map(mapRowToSession);
+          this.saveLocalSessions(mapped);
+          return mapped;
+        }
+      } catch {
+        // Continuar con respaldo siguiente
+      }
+    }
+
     if (API_BASE) {
       try {
         const res = await fetch(`${API_BASE}/sessions`);
@@ -127,6 +189,45 @@ class RemoteSupportService {
   }
 
   async createSession(sessionData) {
+    const sessionCode = `REM-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowLabel = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const baseSession = {
+      id: sessionCode,
+      createdAt: nowLabel,
+      timestamp: Date.now(),
+      customerName: sessionData.customerName || 'Cliente Particular',
+      company: sessionData.company || '',
+      issue: sessionData.issue || 'Asistencia técnica remota general',
+      remoteTool: sessionData.remoteTool || 'AnyDesk / RustDesk',
+      connectionId: sessionData.connectionId || '',
+      status: 'esperando_tecnico',
+      assignedTech: null,
+      messages: [
+        {
+          id: `msg-${Date.now()}-0`,
+          sender: 'system',
+          senderName: 'Blueprint Core',
+          text: `Solicitud #${sessionCode} registrada en la Mesa de Ayuda. En breve un especialista tomará tu caso en tiempo real.`,
+          time: nowLabel
+        }
+      ],
+      logs: [
+        `[${new Date().toLocaleTimeString()}] [SISTEMA] Sesión creada #${sessionCode}`,
+        `[${new Date().toLocaleTimeString()}] [SEGURIDAD] Canal cifrado en espera del especialista asignado.`
+      ]
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const inserted = await supabaseRest.insert('remote_sessions', mapSessionToRow(baseSession));
+        const finalSession = Array.isArray(inserted) && inserted[0] ? mapRowToSession(inserted[0]) : baseSession;
+        this.saveLocalSessions([finalSession, ...this.sessions.filter(s => s.id !== finalSession.id)]);
+        return finalSession;
+      } catch {
+        // Continuar con respaldo
+      }
+    }
+
     if (API_BASE) {
       try {
         const res = await fetch(`${API_BASE}/create`, {
@@ -144,37 +245,48 @@ class RemoteSupportService {
       }
     }
 
-    const sessionCode = `REM-${Math.floor(1000 + Math.random() * 9000)}`;
-    const localSession = {
-      id: sessionCode,
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timestamp: Date.now(),
-      customerName: sessionData.customerName || 'Cliente Particular',
-      company: sessionData.company || '',
-      issue: sessionData.issue || 'Asistencia técnica remota general',
-      remoteTool: sessionData.remoteTool || 'AnyDesk / RustDesk',
-      connectionId: sessionData.connectionId || '',
-      status: 'esperando_tecnico',
-      assignedTech: null,
-      messages: [
-        {
-          id: `msg-${Date.now()}-0`,
-          sender: 'system',
-          senderName: 'Blueprint Core',
-          text: `Solicitud #${sessionCode} registrada en la Mesa de Ayuda. En breve un especialista tomará tu caso en tiempo real.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ],
-      logs: [
-        `[${new Date().toLocaleTimeString()}] [SISTEMA] Sesión creada #${sessionCode}`,
-        `[${new Date().toLocaleTimeString()}] [SEGURIDAD] Canal cifrado en espera del especialista asignado.`
-      ]
-    };
-    this.saveLocalSessions([localSession, ...this.sessions]);
-    return localSession;
+    this.saveLocalSessions([baseSession, ...this.sessions]);
+    return baseSession;
   }
 
   async claimSession(sessionId, techData) {
+    const current = this.sessions.find(s => s.id === sessionId);
+    const claimMsg = {
+      id: `msg-${Date.now()}`,
+      sender: 'system',
+      senderName: 'Mesa de Ayuda',
+      text: `🟢 El especialista ${techData.techName} (${techData.techBadge || 'Nodo Técnico'}) ha tomado tu solicitud en tiempo real.`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    if (isSupabaseConfigured() && current) {
+      try {
+        const nextMessages = [...(current.messages || []), claimMsg];
+        const nextLogs = [
+          ...(current.logs || []),
+          `[${new Date().toLocaleTimeString()}] [ASIGNACIÓN] Caso asumido por ${techData.techName}`
+        ];
+        const updatedRows = await supabaseRest.update(
+          'remote_sessions',
+          `id=eq.${encodeURIComponent(sessionId)}`,
+          {
+            status: 'en_atencion',
+            assigned_tech: techData,
+            messages: nextMessages,
+            logs: nextLogs,
+            updated_at: new Date().toISOString()
+          }
+        );
+        if (Array.isArray(updatedRows) && updatedRows[0]) {
+          const mapped = mapRowToSession(updatedRows[0]);
+          this.saveLocalSessions(this.sessions.map(s => s.id === sessionId ? mapped : s));
+          return mapped;
+        }
+      } catch {
+        // Continuar con respaldo
+      }
+    }
+
     if (API_BASE) {
       try {
         const res = await fetch(`${API_BASE}/${encodeURIComponent(sessionId)}/claim`, {
@@ -194,13 +306,6 @@ class RemoteSupportService {
 
     const updated = this.sessions.map(s => {
       if (s.id === sessionId) {
-        const claimMsg = {
-          id: `msg-${Date.now()}`,
-          sender: 'system',
-          senderName: 'Mesa de Ayuda',
-          text: `🟢 El especialista ${techData.techName} (${techData.techBadge || 'Nodo Técnico'}) ha tomado tu solicitud en tiempo real.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
         return {
           ...s,
           status: 'en_atencion',
@@ -215,6 +320,34 @@ class RemoteSupportService {
   }
 
   async sendMessage(sessionId, messageData) {
+    const newMsg = {
+      id: `msg-${Date.now()}-${Math.floor(Math.random() * 100)}`,
+      sender: messageData.sender,
+      senderName: messageData.senderName,
+      text: messageData.text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const rows = await supabaseRest.select('remote_sessions', `id=eq.${encodeURIComponent(sessionId)}&select=messages`);
+        const latestMsgs = Array.isArray(rows) && rows[0] && Array.isArray(rows[0].messages)
+          ? rows[0].messages
+          : (this.sessions.find(s => s.id === sessionId)?.messages || []);
+        const nextMessages = [...latestMsgs, newMsg];
+        await supabaseRest.update(
+          'remote_sessions',
+          `id=eq.${encodeURIComponent(sessionId)}`,
+          { messages: nextMessages, updated_at: new Date().toISOString() }
+        );
+        const updated = this.sessions.map(s => (s.id === sessionId ? { ...s, messages: nextMessages } : s));
+        this.saveLocalSessions(updated);
+        return newMsg;
+      } catch {
+        // Continuar con respaldo
+      }
+    }
+
     if (API_BASE) {
       try {
         const res = await fetch(`${API_BASE}/${encodeURIComponent(sessionId)}/message`, {
@@ -223,31 +356,24 @@ class RemoteSupportService {
           body: JSON.stringify(messageData)
         });
         if (res.ok) {
-          const newMsg = await res.json();
+          const relayMsg = await res.json();
           const updated = this.sessions.map(s => {
             if (s.id === sessionId) {
               return {
                 ...s,
-                messages: [...(s.messages || []), newMsg]
+                messages: [...(s.messages || []), relayMsg]
               };
             }
             return s;
           });
           this.saveLocalSessions(updated);
-          return newMsg;
+          return relayMsg;
         }
       } catch {
         // Continuar con envío local
       }
     }
 
-    const newMsg = {
-      id: `msg-${Date.now()}-${Math.floor(Math.random() * 100)}`,
-      sender: messageData.sender,
-      senderName: messageData.senderName,
-      text: messageData.text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
     const updated = this.sessions.map(s => {
       if (s.id === sessionId) {
         return {
@@ -263,6 +389,9 @@ class RemoteSupportService {
 
   subscribe(listener) {
     this.listeners.add(listener);
+    if (isSupabaseConfigured()) {
+      this.startSupabasePolling();
+    }
     return () => this.listeners.delete(listener);
   }
 

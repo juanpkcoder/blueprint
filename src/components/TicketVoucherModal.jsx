@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Download, Mail, CheckCircle2, ShieldCheck, 
-  Phone, QrCode, Sparkles, Send, ArrowRight, Copy, Check
+  Phone, QrCode, Sparkles, Send, ArrowRight, Copy, Check, MessageCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playSoundEffect } from '../utils/soundEffects';
 import { escapeHtml, isValidEmail } from '../utils/securityUtils';
 import { formatCOP, convertUSDToCOP } from '../utils/currencyUtils';
+import { OFFICIAL_PHONE_DISPLAY, OFFICIAL_PHONE_TEL, buildOfficialWhatsAppUrl } from '../data/mockData';
 
 export const TicketVoucherModal = ({ isOpen, onClose, order, onNavigateTracking }) => {
   const [emailInput, setEmailInput] = useState(order?.customerEmail || 'contacto@empresa.co');
@@ -23,11 +24,13 @@ export const TicketVoucherModal = ({ isOpen, onClose, order, onNavigateTracking 
   if (!isOpen || !order) return null;
 
   const ticketCode = order.ticketCode || `TKT-${order.id || 'BPT-9042'}`;
-  const tech = order.technician || {
-    name: 'Juan Aguirre',
-    title: 'Director Técnico • QuintoNodo Tech',
-    phone: '+57 310 000 0101',
-    vehicle: 'Nodo Móvil Blueprint #01'
+  const tech = {
+    ...(order.technician || {
+      name: 'Juan Aguirre',
+      title: 'Director Técnico • QuintoNodo Tech',
+      vehicle: 'Nodo Móvil Blueprint #01'
+    }),
+    phone: OFFICIAL_PHONE_DISPLAY
   };
 
   const handleDownloadTicket = () => {
@@ -247,13 +250,25 @@ export const TicketVoucherModal = ({ isOpen, onClose, order, onNavigateTracking 
               </div>
             </div>
 
-            <a
-              href={`tel:${tech.phone}`}
-              className="p-2.5 rounded-xl bg-cyan-950 text-[#00f0ff] hover:bg-cyan-900 border border-cyan-500/40 shrink-0"
-              title="Llamar al especialista"
-            >
-              <Phone className="w-4 h-4" />
-            </a>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={buildOfficialWhatsAppUrl(`Hola Blueprint, adjunto referencia de mi ticket oficial ${ticketCode} (${order.serviceName}).`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2.5 rounded-xl bg-emerald-950 text-emerald-400 hover:bg-emerald-900 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5"
+                title={`Escribir por WhatsApp Oficial ${OFFICIAL_PHONE_DISPLAY}`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">WhatsApp</span>
+              </a>
+              <a
+                href={`tel:${OFFICIAL_PHONE_TEL}`}
+                className="p-2.5 rounded-xl bg-cyan-950 text-[#00f0ff] hover:bg-cyan-900 border border-cyan-500/40"
+                title={`Llamar al ${OFFICIAL_PHONE_DISPLAY}`}
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+            </div>
           </div>
 
           <div className="bg-gradient-to-r from-blue-900/60 via-blue-950 to-[#060b18] p-4 rounded-2xl border border-blue-500/30 flex items-center justify-between">

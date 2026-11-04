@@ -1,5 +1,16 @@
 // Datos de Catálogo para Blueprint by QuintoNodo Tech (Soporte IT Corporativo, Reparación Móvil y Suscripciones Empresariales)
 
+// Línea Única Oficial de Atención y WhatsApp Corporativo Blueprint by QuintoNodo
+export const OFFICIAL_WHATSAPP_DIGITS = '573212288097';
+export const OFFICIAL_PHONE_DISPLAY = '+57 321 228 8097';
+export const OFFICIAL_PHONE_TEL = '+573212288097';
+
+export const buildOfficialWhatsAppUrl = (customMessage = '') => {
+  const defaultMsg = 'Hola Blueprint by QuintoNodo Tech, deseo solicitar atención técnica o cotización en Bogotá.';
+  const text = encodeURIComponent(customMessage || defaultMsg);
+  return `https://wa.me/${OFFICIAL_WHATSAPP_DIGITS}?text=${text}`;
+};
+
 // Genera un avatar local con iniciales en SVG (sin dependencias de imágenes externas)
 const makeAvatar = (initials, from, to) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="128" height="128" rx="28" fill="url(#g)"/><text x="64" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="800" fill="#060b18" text-anchor="middle">${initials}</text></svg>`;
@@ -17,7 +28,7 @@ export const INITIAL_TECHNICIANS = [
     avatar: makeAvatar('JA', '#00f0ff', '#0070f3'),
     vehicle: 'Nodo Móvil Blueprint #01',
     plate: 'BPT-101 Bogotá',
-    phone: '+57 310 000 0101',
+    phone: OFFICIAL_PHONE_DISPLAY,
     lat: 4.6780,
     lng: -74.0560,
     status: 'en_camino',
@@ -51,7 +62,7 @@ export const INITIAL_TECHNICIANS = [
     avatar: makeAvatar('DR', '#38bdf8', '#1d4ed8'),
     vehicle: 'Nodo Lab Móvil Blueprint #02',
     plate: 'BPT-202 Bogotá',
-    phone: '+57 310 000 0202',
+    phone: OFFICIAL_PHONE_DISPLAY,
     lat: 4.6980,
     lng: -74.0840,
     status: 'en_sitio',
@@ -85,7 +96,7 @@ export const INITIAL_TECHNICIANS = [
     avatar: makeAvatar('NZ', '#34d399', '#0e7490'),
     vehicle: 'Nodo Móvil Blueprint #03',
     plate: 'BPT-303 Bogotá',
-    phone: '+57 310 000 0303',
+    phone: OFFICIAL_PHONE_DISPLAY,
     lat: 4.6550,
     lng: -74.0620,
     status: 'disponible',
@@ -111,7 +122,7 @@ export const INITIAL_TECHNICIANS = [
     avatar: makeAvatar('JB', '#a78bfa', '#4f46e5'),
     vehicle: 'Centro Remoto Blueprint #04',
     plate: 'BPT-404 Bogotá',
-    phone: '+57 310 000 0404',
+    phone: OFFICIAL_PHONE_DISPLAY,
     lat: 4.6670,
     lng: -74.0480,
     status: 'disponible',
@@ -137,7 +148,7 @@ export const INITIAL_TECHNICIANS = [
     avatar: makeAvatar('M', '#fbbf24', '#ea580c'),
     vehicle: 'Nodo Móvil Blueprint #05',
     plate: 'BPT-505 Bogotá',
-    phone: '+57 310 000 0505',
+    phone: OFFICIAL_PHONE_DISPLAY,
     lat: 4.6880,
     lng: -74.0710,
     status: 'disponible',

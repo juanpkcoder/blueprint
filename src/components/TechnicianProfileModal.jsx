@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Wrench, Star, Image as ImageIcon
+  Wrench, Star, Image as ImageIcon, MessageCircle
 } from 'lucide-react';
 import { techProfileService } from '../services/technicianProfileService';
+import { OFFICIAL_PHONE_DISPLAY, buildOfficialWhatsAppUrl } from '../data/mockData';
 
 export const TechnicianProfileModal = ({ isOpen, onClose, onSelectTechForService }) => {
   const [profiles, setProfiles] = useState(techProfileService.getProfiles());
@@ -100,18 +101,30 @@ export const TechnicianProfileModal = ({ isOpen, onClose, onSelectTechForService
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                if (onSelectTechForService) {
-                  onSelectTechForService(currentTech);
-                }
-              }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-[#00f0ff] text-[#060b18] font-black text-xs shadow-md shadow-cyan-500/20 hover:opacity-95 whitespace-nowrap self-end md:self-center"
-            >
-              Solicitar con {currentTech.name.split(' ')[0]}
-            </button>
+            <div className="flex items-center gap-2 self-end md:self-center">
+              <a
+                href={buildOfficialWhatsAppUrl(`Hola Blueprint, deseo consultar disponibilidad con el especialista ${currentTech.name} (${currentTech.title}).`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-500/40 font-bold text-xs flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                title={`Contactar por WhatsApp Oficial ${OFFICIAL_PHONE_DISPLAY}`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onSelectTechForService) {
+                    onSelectTechForService(currentTech);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-[#00f0ff] text-[#060b18] font-black text-xs shadow-md shadow-cyan-500/20 hover:opacity-95 whitespace-nowrap"
+              >
+                Solicitar con {currentTech.name.split(' ')[0]}
+              </button>
+            </div>
           </div>
         )}
 

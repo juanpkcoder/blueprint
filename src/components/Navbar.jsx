@@ -1,8 +1,9 @@
 import React from 'react';
 import { 
   MapPin, Headphones, ClipboardList, 
-  Zap, Bot, Award, Lock, Cookie, Wrench
+  Zap, Bot, Award, Lock, Cookie, Wrench, MessageCircle
 } from 'lucide-react';
+import { OFFICIAL_PHONE_DISPLAY, buildOfficialWhatsAppUrl } from '../data/mockData';
 
 export const Navbar = ({ 
   activeTab, 
@@ -79,6 +80,19 @@ export const Navbar = ({
                 Dual
               </button>
             </div>
+
+            {/* Línea Única WhatsApp Oficial */}
+            <a
+              href={buildOfficialWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-500/35 font-bold text-xs transition-colors shadow-sm"
+              title={`Atención directa WhatsApp Oficial ${OFFICIAL_PHONE_DISPLAY}`}
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">321 228 8097</span>
+              <span className="xl:hidden">WhatsApp</span>
+            </a>
 
             {/* Botón de Especialistas y Evidencias Técnicas */}
             <button

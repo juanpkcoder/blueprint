@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Phone } from 'lucide-react';
+import { X, Send, Phone, MessageCircle } from 'lucide-react';
 import { playSoundEffect } from '../utils/soundEffects';
 import { sanitizeText } from '../utils/securityUtils';
+import { OFFICIAL_PHONE_DISPLAY, OFFICIAL_PHONE_TEL, buildOfficialWhatsAppUrl } from '../data/mockData';
 
 export const TechChatModal = ({ isOpen, onClose, order }) => {
   const [messages, setMessages] = useState([
@@ -27,13 +28,15 @@ export const TechChatModal = ({ isOpen, onClose, order }) => {
 
   if (!isOpen || !order) return null;
 
-  const tech = order.technician || {
-    name: 'Juan Aguirre',
-    title: 'Director Técnico • Infraestructura y Servidores B2B',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-    vehicle: 'Nodo Móvil Blueprint #01',
-    phone: '+57 310 000 0101',
-    rating: 4.97
+  const tech = {
+    ...(order.technician || {
+      name: 'Juan Aguirre',
+      title: 'Director Técnico • Infraestructura y Servidores B2B',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      vehicle: 'Nodo Móvil Blueprint #01',
+      rating: 4.97
+    }),
+    phone: OFFICIAL_PHONE_DISPLAY
   };
 
   const handleSend = (e) => {
@@ -94,10 +97,20 @@ export const TechChatModal = ({ isOpen, onClose, order }) => {
           </div>
 
           <div className="flex items-center space-x-2">
+            <a
+              href={buildOfficialWhatsAppUrl(`Hola Blueprint, escribo sobre mi orden activa #${order.id} (${order.serviceName}) asignada a ${tech.name}.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+              title="Abrir WhatsApp Oficial +57 321 228 8097"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
             <a 
-              href={`tel:${tech.phone || '+573100000101'}`}
-              className="p-2 rounded-xl bg-blue-950 hover:bg-blue-900 text-emerald-400 transition-colors"
-              title="Llamar al especialista"
+              href={`tel:${OFFICIAL_PHONE_TEL}`}
+              className="p-2 rounded-xl bg-blue-950 hover:bg-blue-900 text-cyan-300 transition-colors"
+              title={`Llamar al ${OFFICIAL_PHONE_DISPLAY}`}
             >
               <Phone className="w-4 h-4" />
             </a>
